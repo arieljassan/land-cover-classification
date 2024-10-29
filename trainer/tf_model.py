@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import tensorflow as tf
 
+from serving.data import CORINE_CLASS_VALUES
+
 # Default values.
 EPOCHS = 100
 BATCH_SIZE = 512
@@ -28,7 +30,7 @@ KERNEL_SIZE = 5
 
 # Constants.
 NUM_INPUTS = 13
-NUM_CLASSES = 9
+NUM_CLASSES = len(CORINE_CLASS_VALUES)
 TRAIN_TEST_RATIO = 90  # percent for training, the rest for testing/validation
 SHUFFLE_BUFFER_SIZE = BATCH_SIZE * 8
 
