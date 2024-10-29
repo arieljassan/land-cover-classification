@@ -41,22 +41,35 @@ PATCH_SIZE = 128
 MAX_REQUESTS = 20  # default EE request quota
 
 # Simplified polygons covering most land areas in the world.
-WORLD_POLYGONS = [
-    # Americas
-    [(-33.0, -7.0), (-55.0, 53.0), (-166.0, 65.0), (-68.0, -56.0)],
-    # Africa, Asia, Europe
-    [
-        (74.0, 71.0),
-        (166.0, 55.0),
-        (115.0, -11.0),
-        (74.0, -4.0),
-        (20.0, -38.0),
-        (-29.0, 25.0),
-    ],
-    # Australia
-    [(170.0, -47.0), (179.0, -37.0), (167.0, -12.0), (128.0, 17.0), (106.0, -29.0)],
-]
+# WORLD_POLYGONS = [
+#     # Americas
+#     [(-33.0, -7.0), (-55.0, 53.0), (-166.0, 65.0), (-68.0, -56.0)],
+#     # Africa, Asia, Europe
+#     [
+#         (74.0, 71.0),
+#         (166.0, 55.0),
+#         (115.0, -11.0),
+#         (74.0, -4.0),
+#         (20.0, -38.0),
+#         (-29.0, 25.0),
+#     ],
+#     # Australia
+#     [(170.0, -47.0), (179.0, -37.0), (167.0, -12.0), (128.0, 17.0), (106.0, -29.0)],
+# ]
 
+CORINE_POLYGON = [
+    [
+        [28.57402322629263, 71.85229647647411],
+        [-15.019726773707367, 52.90128640168962],
+        [-12.031445523707367, 36.44647958542454],
+        [32.26542947629263, 32.387853901053894],
+        [47.55839822629263, 38.12462418980472],
+        [39.12089822629263, 44.95586330772117],
+        [28.39824197629263, 50.61706208383491],
+        [35.95683572629263, 62.66834647436181],
+        [28.57402322629263, 71.85229647647411]
+    ]
+]
 
 def sample_points(
     seed: int,
@@ -150,7 +163,7 @@ def run_tensorflow(
     points_per_class: int = POINTS_PER_CLASS,
     patch_size: int = PATCH_SIZE,
     max_requests: int = MAX_REQUESTS,
-    polygons: list[list[tuple[float, float]]] = WORLD_POLYGONS,
+    polygons: list[list[tuple[float, float]]] = CORINE_POLYGON,
     beam_args: list[str] | None = None,
 ) -> None:
     """Runs an Apache Beam pipeline to create a dataset.
