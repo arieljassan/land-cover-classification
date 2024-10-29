@@ -17,7 +17,7 @@ from setuptools import setup
 # Requirements for the Dataflow dataset creation pipeline.
 setup(
     name="ppai-landcover-classification",
-    url="https://github.com/GoogleCloudPlatform/python-docs-samples/tree/main/people-and-planet-ai/land-cover-classification",
+    url="https://github.com/arieljassan/land-cover-classification",
     packages=["serving"],
     install_requires=[
         "apache-beam[gcp]==2.60.0",
