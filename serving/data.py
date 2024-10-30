@@ -29,7 +29,7 @@ import numpy as np
 from numpy.lib.recfunctions import structured_to_unstructured
 import requests
 
-
+# TODO: Import the values from trainer.tf_model.
 CORINE_CLASS_VALUES = [
     111, 112, 121, 122, 123, 124, 131, 132, 133, 141, 142, 211, 212, 213, 221, 
     222, 223, 231, 241, 242, 243, 244, 311, 312, 313, 321, 322, 323, 324, 331, 

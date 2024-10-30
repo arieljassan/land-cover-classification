@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import tensorflow as tf
 
-from serving.data import CORINE_CLASS_VALUES
 
 # Default values.
 EPOCHS = 100
@@ -30,6 +29,10 @@ KERNEL_SIZE = 5
 
 # Constants.
 NUM_INPUTS = 13
+CORINE_CLASS_VALUES = [
+    111, 112, 121, 122, 123, 124, 131, 132, 133, 141, 142, 211, 212, 213, 221, 
+    222, 223, 231, 241, 242, 243, 244, 311, 312, 313, 321, 322, 323, 324, 331, 
+    332, 333, 334, 335, 411, 412, 421, 422, 423, 511, 512, 521, 522, 523]
 NUM_CLASSES = len(CORINE_CLASS_VALUES)
 TRAIN_TEST_RATIO = 90  # percent for training, the rest for testing/validation
 SHUFFLE_BUFFER_SIZE = BATCH_SIZE * 8
