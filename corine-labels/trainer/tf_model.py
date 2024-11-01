@@ -147,7 +147,8 @@ def create_model(
             tf.keras.metrics.OneHotIoU(
                 num_classes=NUM_CLASSES,
                 target_class_ids=list(range(NUM_CLASSES)),
-            )
+            ),
+            'accuracy'
         ],
     )
     return model
@@ -187,16 +188,23 @@ def run(
     model = create_model(train_dataset, kernel_size)
     print(model.summary())
 
-    ### Create a TensorBoard call back and write to the gcs path provided by AIP_TENSORBOARD_LOG_DIR
+    # Create a Tensorboard callback and write to the gcs path provided by AIP_TENSORBOARD_LOG_DIR
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir=os.environ['AIP_TENSORBOARD_LOG_DIR'],
         histogram_freq=1)
+    
+    # Add early stopping callback.
+    early_stopping = tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', 
+        patience=10, 
+        restore_best_weights=True)
+
 
     model.fit(
         train_dataset,
         validation_data=test_dataset,
         epochs=epochs,
-        callbacks=[tensorboard_callback],
+        callbacks=[tensorboard_callback, early_stopping],
     )
     model.save(model_path)
     print(f"Model saved to path: {model_path}")
