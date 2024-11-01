@@ -27,6 +27,9 @@ import tensorflow as tf
 EPOCHS = 100
 BATCH_SIZE = 512
 KERNEL_SIZE = 5
+TRAIN_TEST_RATIO = 90  # percent for training, the rest for testing/validation
+SHUFFLE_BUFFER_SIZE = BATCH_SIZE * 8
+EARLY_STOPPING_PATIENCE = 1000
 
 # Constants.
 NUM_INPUTS = 13
@@ -35,8 +38,6 @@ CORINE_CLASS_VALUES = [
     222, 223, 231, 241, 242, 243, 244, 311, 312, 313, 321, 322, 323, 324, 331, 
     332, 333, 334, 335, 411, 412, 421, 422, 423, 511, 512, 521, 522, 523]
 NUM_CLASSES = len(CORINE_CLASS_VALUES)
-TRAIN_TEST_RATIO = 90  # percent for training, the rest for testing/validation
-SHUFFLE_BUFFER_SIZE = BATCH_SIZE * 8
 
 
 def read_example(serialized: bytes) -> tuple[tf.Tensor, tf.Tensor]:
@@ -161,6 +162,7 @@ def run(
     batch_size: int = BATCH_SIZE,
     kernel_size: int = KERNEL_SIZE,
     train_test_ratio: int = TRAIN_TEST_RATIO,
+    early_stopping_patience: int = EARLY_STOPPING_PATIENCE
 ) -> tf.keras.Model:
     """Creates and trains the model.
 
@@ -171,6 +173,8 @@ def run(
         batch_size: Number of examples per training batch.
         kernel_size: Size of the square of neighboring pixels for the model to look at.
         train_test_ratio: Percent of the data to use for training.
+        early_stopping_patience: Early stopping patience.
+
 
     Returns: The trained model.
     """
@@ -180,6 +184,7 @@ def run(
     print(f"batch_size: {batch_size}")
     print(f"kernel_size: {kernel_size}")
     print(f"train_test_ratio: {train_test_ratio}")
+    print(f"early_stopping_patience: {early_stopping_patience}")
     print("-" * 40)
 
     dataset = read_dataset(data_path)
@@ -196,7 +201,7 @@ def run(
     # Add early stopping callback.
     early_stopping = tf.keras.callbacks.EarlyStopping(
         monitor='val_loss', 
-        patience=10, 
+        patience=early_stopping_patience, 
         restore_best_weights=True)
 
 
@@ -249,6 +254,12 @@ if __name__ == "__main__":
         default=TRAIN_TEST_RATIO,
         help="Percent of the data to use for training.",
     )
+    parser.add_argument(
+        "--early-stopping-patience",
+        type=int,
+        default=EARLY_STOPPING_PATIENCE,
+        help="Early stopping patience.",
+    )
     args = parser.parse_args()
 
     run(
@@ -258,4 +269,5 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         kernel_size=args.kernel_size,
         train_test_ratio=args.train_test_ratio,
+        early_stopping_patience=args.early_stopping_patience
     )
