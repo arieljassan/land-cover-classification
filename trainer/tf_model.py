@@ -19,6 +19,7 @@ The model is a simple Fully Convolutional Network (FCN).
 
 from __future__ import annotations
 
+import os
 import tensorflow as tf
 
 
@@ -186,10 +187,16 @@ def run(
     model = create_model(train_dataset, kernel_size)
     print(model.summary())
 
+    ### Create a TensorBoard call back and write to the gcs path provided by AIP_TENSORBOARD_LOG_DIR
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(
+        log_dir=os.environ['AIP_TENSORBOARD_LOG_DIR'],
+        histogram_freq=1)
+
     model.fit(
         train_dataset,
         validation_data=test_dataset,
         epochs=epochs,
+        callbacks=[tensorboard_callback],
     )
     model.save(model_path)
     print(f"Model saved to path: {model_path}")
