@@ -32,13 +32,58 @@ SHUFFLE_BUFFER_SIZE = BATCH_SIZE * 8
 EARLY_STOPPING_PATIENCE = 1000
 
 # Constants.
-NUM_INPUTS = 13
+CORINE_CLASS_NAMES = [
+    "Artificial surfaces; urban fabric; continuous urban fabric",
+    "Artificial surfaces; urban fabric; discontinuous urban fabric",
+    "Artificial surfaces; industrial, commercial, and transport units; industrial or commercial units",
+    "Artificial surfaces; industrial, commercial, and transport units; road and rail networks and associated land",
+    "Artificial surfaces; industrial, commercial, and transport units; port areas",
+    "Artificial surfaces; industrial, commercial, and transport units; airports",
+    "Artificial surfaces; mine, dump, and construction sites; mineral extraction sites",
+    "Artificial surfaces; mine, dump, and construction sites; dump sites",
+    "Artificial surfaces; mine, dump, and construction sites; construction sites",
+    "Artificial surfaces; artificial, non-agricultural vegetated areas; green urban areas",
+    "Artificial surfaces; artificial, non-agricultural vegetated areas; sport and leisure facilities",
+    "Agricultural areas; arable land; non-irrigated arable land",
+    "Agricultural areas; arable land; permanently irrigated land",
+    "Agricultural areas; arable land; rice fields",
+    "Agricultural areas; permanent crops; vineyards",
+    "Agricultural areas; permanent crops; fruit trees and berry plantations",
+    "Agricultural areas; permanent crops; olive groves",
+    "Agricultural areas; pastures; pastures",
+    "Agricultural areas; heterogeneous agricultural areas; annual crops associated with permanent crops",
+    "Agricultural areas; heterogeneous agricultural areas; complex cultivation patterns",
+    "Agricultural areas; heterogeneous agricultural areas; land principally occupied by agriculture, with significant areas of natural vegetation",
+    "Agricultural areas; heterogeneous agricultural areas; agro-forestry areas",
+    "Forest and semi natural areas; forests; broad-leaved forest",
+    "Forest and semi natural areas; forests; coniferous forest",
+    "Forest and semi natural areas; forests; mixed forest",
+    "Forest and semi natural areas; scrub and/or herbaceous vegetation associations; natural grasslands",
+    "Forest and semi natural areas; scrub and/or herbaceous vegetation associations; moors and heathland",
+    "Forest and semi natural areas; scrub and/or herbaceous vegetation associations; sclerophyllous vegetation",
+    "Forest and semi natural areas; scrub and/or herbaceous vegetation associations; transitional woodland-shrub",
+    "Forest and semi natural areas; open spaces with little or no vegetation; beaches, dunes, sands",
+    "Forest and semi natural areas; open spaces with little or no vegetation; bare rocks",
+    "Forest and semi natural areas; open spaces with little or no vegetation; sparsely vegetated areas",
+    "Forest and semi natural areas; open spaces with little or no vegetation; burnt areas",
+    "Forest and semi natural areas; open spaces with little or no vegetation; glaciers and perpetual snow",
+    "Wetlands; inland wetlands; inland marshes",
+    "Wetlands; inland wetlands; peat bogs",
+    "Wetlands; maritime wetlands; salt marshes",
+    "Wetlands; maritime wetlands; salines",
+    "Wetlands; maritime wetlands; intertidal flats",
+    "Water bodies; inland waters; water courses",
+    "Water bodies; inland waters; water bodies",
+    "Water bodies; marine waters; coastal lagoons",
+    "Water bodies; marine waters; estuaries",
+    "Water bodies; marine waters; sea and ocean"
+]
 CORINE_CLASS_VALUES = [
     111, 112, 121, 122, 123, 124, 131, 132, 133, 141, 142, 211, 212, 213, 221, 
     222, 223, 231, 241, 242, 243, 244, 311, 312, 313, 321, 322, 323, 324, 331, 
     332, 333, 334, 335, 411, 412, 421, 422, 423, 511, 512, 521, 522, 523]
 NUM_CLASSES = len(CORINE_CLASS_VALUES)
-
+NUM_INPUTS = 13
 
 def read_example(serialized: bytes) -> tuple[tf.Tensor, tf.Tensor]:
     """Parses and reads a training example from TFRecords.
