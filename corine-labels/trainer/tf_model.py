@@ -253,24 +253,35 @@ def run(
         restore_best_weights=True)
 
     class ConfusionMatrixCallback(tf.keras.callbacks.Callback):
-        def on_epoch_end(self, epoch, logs=None):        
+        def __init__(self, validation_data, writer):
+            super().__init__()
+            self.validation_data = validation_data
+            self.writer = writer
+
+        def on_epoch_end(self, epoch, logs=None):
+            cm = tf.zeros((NUM_CLASSES, NUM_CLASSES), dtype=tf.dtypes.int32)
             # 1. Get predictions and true labels
-            for x, y in test_dataset.take(4000):
-                label = tf.math.argmax(y, axis=-1)
-                label_np = np.array(label)
-                label_flat = tf.reshape(label_np, [-1]) 
+            for x, y in self.validation_data:
+                for i in range(x.shape[0]):
 
-                probabilities = self.model.predict(np.stack([x]), verbose=0)[0]
-                predictions = probabilities.argmax(axis=-1)
-                predictions_flat = tf.reshape(predictions, [-1])
+                    label = tf.math.argmax(y, axis=-1)
+                    label_np = np.array(label)
+                    label_flat = tf.reshape(label_np, [-1]) 
 
-            # 2. Calculate confusion matrix (using tf.math.confusion_matrix)
-                batch_cm = tf.math.confusion_matrix(
-                    label_flat, 
-                    predictions_flat,
-                    num_classes=NUM_CLASSES
-                )
-                cm += batch_cm
+                    print(f'shape of x: {x.shape}')
+                    print(f'shape of xi: {x[i].shape}')
+
+                    probabilities = self.model.predict(np.stack([x[i]]), verbose=0)[0]
+                    predictions = probabilities.argmax(axis=-1)
+                    predictions_flat = tf.reshape(predictions, [-1])
+
+                # 2. Calculate confusion matrix (using tf.math.confusion_matrix)
+                    batch_cm = tf.math.confusion_matrix(
+                        label_flat, 
+                        predictions_flat,
+                        num_classes=NUM_CLASSES
+                    )
+                    cm += batch_cm
 
             # 3. Create a confusion matrix image
             figure = plt.figure(figsize=(8, 8))
@@ -289,18 +300,20 @@ def run(
             # 5. Log to TensorBoard
             with self.writer.as_default():
                 tf.summary.image("Confusion Matrix", img, step=epoch)
-            plt.close(figure)    
+            plt.close(figure)
 
     # ... (set up TensorBoard and writer) ...
     log_dir = "logs/confusion_matrix/"
     writer = tf.summary.create_file_writer(log_dir)
+
+    cm_callback = ConfusionMatrixCallback(validation_data=test_dataset, writer=writer)
 
 
     model.fit(
         train_dataset,
         validation_data=test_dataset,
         epochs=epochs,
-        callbacks=[tensorboard_callback, early_stopping, ConfusionMatrixCallback()],
+        callbacks=[tensorboard_callback, early_stopping, cm],
     )
     model.save(model_path)
     print(f"Model saved to path: {model_path}")
