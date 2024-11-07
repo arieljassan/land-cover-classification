@@ -25,7 +25,6 @@ import numpy as np
 import tensorflow as tf
 
 
-
 # Default values.
 EPOCHS = 100
 BATCH_SIZE = 512
@@ -87,6 +86,56 @@ CORINE_CLASS_VALUES = [
     332, 333, 334, 335, 411, 412, 421, 422, 423, 511, 512, 521, 522, 523]
 NUM_CLASSES = len(CORINE_CLASS_VALUES)
 NUM_INPUTS = 13
+
+
+class ConfusionMatrixCallback(tf.keras.callbacks.Callback):
+    def __init__(self, validation_data, writer):
+        super().__init__()
+        self.validation_data = validation_data
+        self.writer = writer
+
+    def on_epoch_end(self, epoch, logs=None):
+        self.model.summary()
+
+        cm = tf.zeros((NUM_CLASSES, NUM_CLASSES), dtype=tf.dtypes.int32)
+        for x, y in self.validation_data:
+            for i in range(x.shape[0]):
+                label = tf.math.argmax(y[i], axis=-1)
+                label_np = np.array(label)
+                label_flat = tf.reshape(label_np, [-1]) 
+
+                probabilities = self.model.predict(np.stack([x[i]]), verbose=0)[0]
+                predictions = probabilities.argmax(axis=-1)
+                predictions_flat = tf.reshape(predictions, [-1])
+
+                batch_cm = tf.math.confusion_matrix(
+                    label_flat, 
+                    predictions_flat,
+                    num_classes=NUM_CLASSES
+                )
+                cm += batch_cm
+
+        # Create a confusion matrix image
+        figure = plt.figure(figsize=(10, 10))
+        plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+        plt.title("Confusion Matrix")
+        plt.colorbar()
+        plt.xlabel("Predictions")
+        plt.ylabel("Labels")
+        plt.xticks(range(NUM_CLASSES), CORINE_CLASS_VALUES, fontsize=8, rotation='vertical')
+        plt.yticks(range(NUM_CLASSES), CORINE_CLASS_VALUES, fontsize=8)
+
+        # Convert to image summary
+        figure.canvas.draw()
+        img = np.frombuffer(figure.canvas.tostring_rgb(), dtype=np.uint8)
+        img = img.reshape(figure.canvas.get_width_height()[::-1] + (3,))
+        img = np.expand_dims(img, 0)  # Add batch dimension
+
+        # Log to TensorBoard
+        with self.writer.as_default():
+            tf.summary.image("Confusion Matrix", img, step=epoch)
+        plt.close(figure)
+
 
 def read_example(serialized: bytes) -> tuple[tf.Tensor, tf.Tensor]:
     """Parses and reads a training example from TFRecords.
@@ -236,84 +285,45 @@ def run(
     print("-" * 40)
 
     dataset = read_dataset(data_path)
-    (train_dataset, test_dataset) = split_dataset(dataset, batch_size, train_test_ratio)
+    train_dataset, test_dataset = split_dataset(
+        dataset, 
+        batch_size, 
+        train_test_ratio
+    )
 
     model = create_model(train_dataset, kernel_size)
     print(model.summary())
 
-    # Create a Tensorboard callback and write to the gcs path provided by AIP_TENSORBOARD_LOG_DIR
+    # Create a Tensorboard callback and write to AIP_TENSORBOARD_LOG_DIR in GCS.
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir=os.environ['AIP_TENSORBOARD_LOG_DIR'],
-        histogram_freq=1)
+        histogram_freq=1
+    )
     
     # Add early stopping callback.
     early_stopping = tf.keras.callbacks.EarlyStopping(
         monitor='val_loss', 
         patience=early_stopping_patience, 
-        restore_best_weights=True)
+        restore_best_weights=True
+    )
 
-    class ConfusionMatrixCallback(tf.keras.callbacks.Callback):
-        def __init__(self, validation_data, writer):
-            super().__init__()
-            self.validation_data = validation_data
-            self.writer = writer
-
-        def on_epoch_end(self, epoch, logs=None):
-            cm = tf.zeros((NUM_CLASSES, NUM_CLASSES), dtype=tf.dtypes.int32)
-            # 1. Get predictions and true labels
-            for x, y in self.validation_data:
-                for i in range(x.shape[0]):
-
-                    label = tf.math.argmax(y, axis=-1)
-                    label_np = np.array(label)
-                    label_flat = tf.reshape(label_np, [-1]) 
-
-                    print(f'shape of x: {x.shape}')
-                    print(f'shape of xi: {x[i].shape}')
-
-                    probabilities = self.model.predict(np.stack([x[i]]), verbose=0)[0]
-                    predictions = probabilities.argmax(axis=-1)
-                    predictions_flat = tf.reshape(predictions, [-1])
-
-                # 2. Calculate confusion matrix (using tf.math.confusion_matrix)
-                    batch_cm = tf.math.confusion_matrix(
-                        label_flat, 
-                        predictions_flat,
-                        num_classes=NUM_CLASSES
-                    )
-                    cm += batch_cm
-
-            # 3. Create a confusion matrix image
-            figure = plt.figure(figsize=(8, 8))
-            plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-            plt.title("Confusion matrix")
-            plt.colorbar()
-
-            # ... (add labels and formatting) ...
-
-            # 4. Convert to image summary
-            figure.canvas.draw()
-            img = np.frombuffer(figure.canvas.tostring_rgb(), dtype=np.uint8)
-            img = img.reshape(figure.canvas.get_width_height()[::-1] + (3,))
-            img = np.expand_dims(img, 0)  # Add batch dimension
-
-            # 5. Log to TensorBoard
-            with self.writer.as_default():
-                tf.summary.image("Confusion Matrix", img, step=epoch)
-            plt.close(figure)
-
-    # ... (set up TensorBoard and writer) ...
-    log_dir = "logs/confusion_matrix/"
-    writer = tf.summary.create_file_writer(log_dir)
-
-    cm_callback = ConfusionMatrixCallback(validation_data=test_dataset, writer=writer)
-
+    # Add confusion matrix callback.
+    confusion_matrix_callback = ConfusionMatrixCallback(
+        validation_data=test_dataset, 
+        writer=tf.summary.create_file_writer(
+            f"{os.environ['AIP_TENSORBOARD_LOG_DIR']}/logs/confusion_matrix/"
+        )
+    )
 
     model.fit(
         train_dataset,
         validation_data=test_dataset,
         epochs=epochs,
-        callbacks=[tensorboard_callback, early_stopping, cm],
+        callbacks=[
+            tensorboard_callback, 
+            early_stopping, 
+            confusion_matrix_callback
+        ],
     )
     model.save(model_path)
     print(f"Model saved to path: {model_path}")
