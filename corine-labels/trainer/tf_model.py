@@ -94,7 +94,7 @@ class ConfusionMatrixCallback(tf.keras.callbacks.Callback):
         self.validation_data = validation_data
         self.writer = writer
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_train_end(self, logs=None):
         self.model.summary()
 
         cm = tf.zeros((NUM_CLASSES, NUM_CLASSES), dtype=tf.dtypes.int32)
@@ -133,7 +133,7 @@ class ConfusionMatrixCallback(tf.keras.callbacks.Callback):
 
         # Log to TensorBoard
         with self.writer.as_default():
-            tf.summary.image("Confusion Matrix", img, step=epoch)
+            tf.summary.image("Confusion Matrix", img, step=0)
         plt.close(figure)
 
 
