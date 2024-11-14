@@ -154,6 +154,24 @@ def show_example(inputs: np.ndarray, labels: np.ndarray, max: float = 3000) -> N
     fig.show()
 
 
+def show_example_and_prediction(
+    inputs: np.ndarray, 
+    labels: np.ndarray, 
+    predictions: np.ndarray, 
+    max: float = 3000
+) -> None:
+    """Shows an example of inputs, labels, and predictions an image."""
+    fig = make_subplots(
+        rows=1, 
+        cols=3, 
+        subplot_titles=("Sentinel 2", "Labels", "Predictions")
+    )
+    fig.add_trace(Image(z=render_sentinel2(inputs, max)), row=1, col=1)
+    fig.add_trace(Image(z=render_landcover(labels)), row=1, col=2)
+    fig.add_trace(Image(z=render_landcover(predictions)), row=1, col=3)
+    fig.show()
+
+
 def show_legend() -> None:
     """Shows the legend of the land cover classifications."""
 
