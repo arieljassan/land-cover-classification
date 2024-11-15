@@ -162,19 +162,28 @@ def show_example_and_prediction(
 ) -> None:
     """Shows an example of inputs, labels, and predictions an image."""
 
+    # Numpy array containing label and prediction class descriptions.
+    ordered_classifications = dict(
+        zip(range(len(CLASSIFICATIONS)), CLASSIFICATIONS.keys())
+    )
+    mapping_func = np.vectorize(lambda x: ordered_classifications.get(x))
+    prediction_descriptions = mapping_func(predictions)
+    label_descriptions = mapping_func(labels)
+    stacked_descriptions = np.stack(
+        (prediction_descriptions, label_descriptions), axis=2
+    ) 
+
+    # Hover teplate for Predictions trace in plot.
     hovertemplate = ("""
-      Land cover<br>
       x: %{x}<br>
       y: %{y}<br>
-      class: %{customdata}<br>
+      class pre: %{customdata[0]}<br>
+      class lab: %{customdata[1]}<br>
       color: %{z}
       """
     )
 
-    ordered_classifications = dict(zip(range(len(CLASSIFICATIONS)), CLASSIFICATIONS.keys()))
-    mapping_func = np.vectorize(lambda x: ordered_classifications.get(x))
-    predicted_labels = mapping_func(predictions)
-
+    # Create the plot.
     fig = make_subplots(
         rows=1, 
         cols=3, 
@@ -186,8 +195,8 @@ def show_example_and_prediction(
         Image(
             z=render_landcover(predictions),
             hovertemplate=hovertemplate,
-            customdata=predicted_labels
-        ),     
+            customdata=stacked_descriptions
+        ), 
         row=1, col=3
     )
     fig.show()
