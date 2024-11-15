@@ -161,6 +161,20 @@ def show_example_and_prediction(
     max: float = 3000
 ) -> None:
     """Shows an example of inputs, labels, and predictions an image."""
+
+    hovertemplate = ("""
+      Land cover<br>
+      x: %{x}<br>
+      y: %{y}<br>
+      class: %{customdata}<br>
+      color: %{z}
+      """
+    )
+
+    ordered_classifications = dict(zip(range(len(CLASSIFICATIONS)), CLASSIFICATIONS.keys()))
+    mapping_func = np.vectorize(lambda x: ordered_classifications.get(x))
+    predicted_labels = mapping_func(predictions)
+
     fig = make_subplots(
         rows=1, 
         cols=3, 
@@ -168,9 +182,15 @@ def show_example_and_prediction(
     )
     fig.add_trace(Image(z=render_sentinel2(inputs, max)), row=1, col=1)
     fig.add_trace(Image(z=render_landcover(labels)), row=1, col=2)
-    fig.add_trace(Image(z=render_landcover(predictions)), row=1, col=3)
+    fig.add_trace(
+        Image(
+            z=render_landcover(predictions),
+            hovertemplate=hovertemplate,
+            customdata=predicted_labels
+        ),     
+        row=1, col=3
+    )
     fig.show()
-
 
 def show_legend() -> None:
     """Shows the legend of the land cover classifications."""
