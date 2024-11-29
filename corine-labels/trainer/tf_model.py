@@ -162,6 +162,35 @@ def read_example(serialized: bytes) -> tuple[tf.Tensor, tf.Tensor]:
     return (inputs, one_hot_labels)
 
 
+def read_example_lonlat(serialized: bytes
+) -> tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+    """Parses and reads a training example from TFRecords.
+
+    Args:
+        serialized: Serialized example bytes from TFRecord files.
+
+    Returns: An (inputs, labels, lonlat) tuple of tensors.
+    """
+    features_dict = {
+        "inputs": tf.io.FixedLenFeature([], tf.string),
+        "labels": tf.io.FixedLenFeature([], tf.string),
+        "lonlat": tf.io.FixedLenFeature([], tf.string)
+    }
+    example = tf.io.parse_single_example(serialized, features_dict)
+    inputs = tf.io.parse_tensor(example["inputs"], tf.float32)
+    labels = tf.io.parse_tensor(example["labels"], tf.uint8)
+    lonlat = tf.io.parse_tensor(example["lonlat"], tf.float32)
+
+    # TensorFlow cannot infer the shape's rank, so we set the shapes explicitly.
+    inputs.set_shape([None, None, NUM_INPUTS])
+    labels.set_shape([None, None, 1])
+    lonlat.set_shape([None, None, 1])
+
+    # Classifications are measured against one-hot encoded vectors.
+    one_hot_labels = tf.one_hot(labels[:, :, 0], NUM_CLASSES)
+    return (inputs, one_hot_labels, lonlat)
+
+
 def read_dataset(data_path: str) -> tf.data.Dataset:
     """Reads compressed TFRecord files from a directory into a tf.data.Dataset.
 
@@ -174,6 +203,20 @@ def read_dataset(data_path: str) -> tf.data.Dataset:
     file_names = tf.data.Dataset.list_files(file_pattern).cache()
     dataset = tf.data.TFRecordDataset(file_names, compression_type="GZIP")
     return dataset.map(read_example, num_parallel_calls=tf.data.AUTOTUNE)
+
+
+def read_dataset_lonlat(data_path: str) -> tf.data.Dataset:
+    """Reads compressed TFRecord files from a directory into a tf.data.Dataset.
+
+    Args:
+        data_path: Local or Cloud Storage directory path where the TFRecord files are.
+
+    Returns: A tf.data.Dataset with the contents of the TFRecord files.
+    """
+    file_pattern = tf.io.gfile.join(data_path, "*.tfrecord.gz")
+    file_names = tf.data.Dataset.list_files(file_pattern).cache()
+    dataset = tf.data.TFRecordDataset(file_names, compression_type="GZIP")
+    return dataset.map(read_example_lonlat, num_parallel_calls=tf.data.AUTOTUNE)
 
 
 def split_dataset(

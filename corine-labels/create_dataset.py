@@ -124,12 +124,41 @@ def get_training_example(
     )
 
 
+def get_training_example_lonlat(
+    lonlat: tuple[float, float], patch_size: int = PATCH_SIZE
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Gets an (inputs, labels) training example for year 2020.
+
+    Args:
+        lonlat: A (longitude, latitude) pair for the point of interest.
+        patch_size: Size in pixels of the surrounding square patch.
+
+    Returns: An (inputs, labels) pair of NumPy arrays.
+    """
+    data.ee_init()
+    return (
+        data.get_input_patch(2020, lonlat, patch_size),
+        data.get_label_patch(lonlat, patch_size),
+        lonlat,
+    )
+
+
 def try_get_example(
     lonlat: tuple[float, float], patch_size: int = PATCH_SIZE
 ) -> Iterable[tuple[np.ndarray, np.ndarray]]:
     """Wrapper over `get_training_examples` that allows it to simply log errors instead of crashing."""
     try:
         yield get_training_example(lonlat, patch_size)
+    except requests.exceptions.HTTPError as e:
+        logging.exception(e)
+
+
+def try_get_example_lonlat(
+    lonlat: tuple[float, float], patch_size: int = PATCH_SIZE
+) -> Iterable[tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    """Wrapper over `get_training_examples` that allows it to simply log errors instead of crashing."""
+    try:
+        yield get_training_example_lonlat(lonlat, patch_size)
     except requests.exceptions.HTTPError as e:
         logging.exception(e)
 
@@ -197,7 +226,7 @@ def run_tensorflow(
             | "🌱 Make seeds" >> beam.Create(range(max_requests))
             | "📌 Sample points" >> beam.FlatMap(sample_points, polygons, num_points)
             | "🃏 Reshuffle" >> beam.Reshuffle()
-            | "📑 Get examples" >> beam.FlatMap(try_get_example, patch_size)
+            | "📑 Get examples" >> beam.FlatMap(try_get_example_lonlat, patch_size)
             | "✍🏽 Serialize" >> beam.MapTuple(serialize_tensorflow)
             | "📚 Write TFRecords"
             >> beam.io.WriteToTFRecord(
