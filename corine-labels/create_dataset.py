@@ -187,6 +187,35 @@ def serialize_tensorflow(inputs: np.ndarray, labels: np.ndarray) -> bytes:
     return example.SerializeToString()
 
 
+def serialize_tensorflow_lonlat(
+    inputs: np.ndarray, 
+    labels: np.ndarray, 
+    lonlat: np.ndarray
+) -> bytes:
+    """Serializes inputs, labels and lonlat NumPy arrays as a tf.Example.
+
+    Both inputs and outputs are expected to be dense tensors, not dictionaries.
+    We serialize both the inputs and labels to save their shapes.
+
+    Args:
+        inputs: The example inputs as dense tensors.
+        labels: The example labels as dense tensors.
+        lonlat: The example lonlat as dense tensors.
+
+    Returns: The serialized tf.Example as bytes.
+    """
+    import tensorflow as tf
+
+    features = {
+        name: tf.train.Feature(
+            bytes_list=tf.train.BytesList(value=[tf.io.serialize_tensor(data).numpy()])
+        )
+        for name, data in {"inputs": inputs, "labels": labels, "lonlat": lonlat}.items()
+    }
+    example = tf.train.Example(features=tf.train.Features(feature=features))
+    return example.SerializeToString()
+
+
 def run_tensorflow(
     data_path: str,
     points_per_class: int = POINTS_PER_CLASS,
@@ -227,7 +256,7 @@ def run_tensorflow(
             | "📌 Sample points" >> beam.FlatMap(sample_points, polygons, num_points)
             | "🃏 Reshuffle" >> beam.Reshuffle()
             | "📑 Get examples" >> beam.FlatMap(try_get_example_lonlat, patch_size)
-            | "✍🏽 Serialize" >> beam.MapTuple(serialize_tensorflow)
+            | "✍🏽 Serialize" >> beam.MapTuple(serialize_tensorflow_lonlat)
             | "📚 Write TFRecords"
             >> beam.io.WriteToTFRecord(
                 f"{data_path}/part", file_name_suffix=".tfrecord.gz"
