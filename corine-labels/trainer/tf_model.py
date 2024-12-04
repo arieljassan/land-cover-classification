@@ -179,12 +179,12 @@ def read_example_lonlat(serialized: bytes
     example = tf.io.parse_single_example(serialized, features_dict)
     inputs = tf.io.parse_tensor(example["inputs"], tf.float32)
     labels = tf.io.parse_tensor(example["labels"], tf.uint8)
-    lonlat = tf.io.parse_tensor(example["lonlat"], tf.float32)
+    lonlat = tf.io.parse_tensor(example["lonlat"], tf.double)
 
     # TensorFlow cannot infer the shape's rank, so we set the shapes explicitly.
     inputs.set_shape([None, None, NUM_INPUTS])
     labels.set_shape([None, None, 1])
-    lonlat.set_shape([None, None, 1])
+    lonlat.set_shape([2])
 
     # Classifications are measured against one-hot encoded vectors.
     one_hot_labels = tf.one_hot(labels[:, :, 0], NUM_CLASSES)

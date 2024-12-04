@@ -139,7 +139,7 @@ def get_training_example_lonlat(
     return (
         data.get_input_patch(2020, lonlat, patch_size),
         data.get_label_patch(lonlat, patch_size),
-        lonlat,
+        np.asarray(lonlat),
     )
 
 
